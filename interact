@@ -1,0 +1,87 @@
+#!/usr/bin/env perl
+
+# watches for any changes in your development directory
+# and then runs a command, such as run your unit test suite
+# and outputs the results either to the terminal or to growl
+
+use strict;
+use warnings;
+
+use AnyEvent::Filesys::Notify;
+use AnyEvent::Impl::Perl;
+use Getopt::Long;
+use IPC::Open3::Utils;
+
+my $growl_ok = 0;
+eval { require Growl::Any; }; $growl_ok = 1 unless $@;
+
+my $dirs         = "lib,t";
+my $interval     = 0.5;
+my $filter       = '\.(swp|tmp)$';
+my $exec         = "prove -Ilib t";
+my $exec_timeout = 15;
+my $quit_timeout = 10000;
+my $growl        = $growl_ok;
+my $growl_icon   = "http://st.pimg.net/perlweb/images/icons/onion.vee5cb98.png";
+my $growl_lines  = 20;
+my $growl_title;
+
+GetOptions(
+    "dirs=s"         => \$dirs,
+    "interval=i"     => \$interval,
+    "filter=s"       => \$filter,
+    "exec=s"         => \$exec,
+    "exec_timeout=i" => \$exec_timeout,
+    "quit_timeout=i" => \$quit_timeout,
+    "growl=s"        => \$growl,
+    "growl_icon=s"   => \$growl_icon,
+    "growl_lines=i"  => \$growl_lines,
+    "growl_title=s"  => \$growl_title,
+);
+
+output("$0\n\n\t--dirs $dirs\n\t--interval $interval\n\t--filter '$filter'\n\t--growl $growl\n\t--exec '$exec'\n\t--exec_timeout '$exec_timeout'\n\t--quit_timeout '$quit_timeout'\n\t--growl_icon '$growl_icon'\n\t--growl_lines '$growl_lines'\n\t--growl_title 'filename that changed'\n\n");
+
+alarm $quit_timeout;
+$SIG{ALRM} = sub { die "alarm\n" };
+
+my $notifier = AnyEvent::Filesys::Notify->new(
+    dirs     => [ split(',', $dirs) ],
+    interval => $interval,
+    filter   => sub { shift !~ /$filter/ },
+    cb       => sub {
+        my @events = @_;
+
+        unless ( $growl_title ) {
+            for ( @events ) {
+                $growl_title = $_->path;
+            }
+            if ( length $growl_title > 30 ) {
+                ($growl_title) = $growl_title =~ /.*(.{28})$/;
+                $growl_title = "..$growl_title";
+            }
+        }
+
+        my @output = ();
+        my @err = ();
+        put_cmd_in($exec, \@output, { timeout => $exec_timeout } );
+        output(@output, @err);
+        alarm $quit_timeout;
+    },
+);
+
+AnyEvent::Impl::Perl::loop();
+
+sub output {
+    my @output = @_;
+    if ( ! $growl or $growl eq "both" ) {
+        print @output;
+        print "\n";
+    }
+    if ( $growl ) {
+        require Growl::Any;
+        my $growl = Growl::Any->new(appname => "interact", events => ["event1"]);
+        while(my @out = splice(@output,0,$growl_lines)) {
+            $growl->notify("event1", $growl_title, join("",@out), $growl_icon);
+        }
+    }
+}
