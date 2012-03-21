@@ -1,5 +1,8 @@
-install 'interact' somewhere in your path
+watches for any changes in your development directory
+and then runs a command, such as run your unit test suite
+and outputs the results either to the terminal or to growl
 
-run 'interact' before you start developing and it will do its magic
-
-pass in options to 'interact' as you see fit
+How to use:
+1. install 'interact' somewhere in your path
+2. run 'interact' before you start developing and it will do its magic
+3. pass in options to 'interact' as you see fit
