@@ -1,0 +1,5 @@
+install 'interact' somewhere in your path
+
+run 'interact' before you start developing and it will do its magic
+
+pass in options to 'interact' as you see fit
