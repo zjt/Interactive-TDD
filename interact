@@ -12,8 +12,7 @@ use AnyEvent::Impl::Perl;
 use Getopt::Long;
 use IPC::Open3::Utils;
 
-my $growl_ok = 0;
-eval { require Growl::Any; }; $growl_ok = 1 unless $@;
+my $growl_ok = eval { require Growl::Any; Growl::Any->backend; };
 
 # options with defaults
 my $dirs         = "lib,t";
@@ -41,18 +40,23 @@ GetOptions(
     "growl_lines=i"  => \$growl_lines,
 );
 
+if ( $growl and ! $growl_ok ) {
+    $growl = $growl_ok;
+    output("growl disabled because Growl::Any isn't installed, or Growl::Any doesn't have a backend installed\n");
+}
+
 # output a startup message
 output( <<END
 $0
-\t--dirs $dirs
-\t--interval $interval
-\t--filter '$filter'
-\t--growl $growl
-\t--exec '$exec'
-\t--exec_timeout '$exec_timeout'
-\t--quit_timeout '$quit_timeout'
-\t--growl_icon '$growl_icon'
-\t--growl_lines '$growl_lines'
+\t--dirs $dirs                    # comma separated list of directories
+\t--interval $interval            # directory poll interval in seconds
+\t--filter '$filter'              # ignore files names that match filter
+\t--growl $growl                  # use growl (specify 'both' for dual mode)
+\t--exec '$exec'                  # command to run when files change
+\t--exec_timeout '$exec_timeout'  # time to wait for command to finish
+\t--quit_timeout '$quit_timeout'  # inactivity timout for this app
+\t--growl_icon '$growl_icon'      # use this image path or url for growl display
+\t--growl_lines '$growl_lines'    # split growl notifications by number of lines
 \n
 END
 );
