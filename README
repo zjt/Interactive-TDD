@@ -1,5 +1,9 @@
-watches for any changes in your development directory
-and then runs a command, such as run your unit test suite
+NOTE: I created 'interact' before I discovered Test::Continuous 'autoprove' (https://metacpan.org/module/autoprove).  
+'autoprove' is more complete, so I recommend using it for Perl development.  
+There are still uses for 'interact' since it can be used for things other than Perl development.
+
+'interact' watches for any changes in a directory
+and then runs a command (such as run your unit test suite)
 and outputs the results either to the terminal or to growl
 
 How to use:
